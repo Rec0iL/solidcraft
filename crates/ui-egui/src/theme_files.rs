@@ -1,6 +1,6 @@
 //! Colour themes as files (#2255): a `solidcraft-theme/1` JSON file names a base palette (the
 //! built-in Dark or Light) and sets any of its [`Tokens`] by name, so a theme can be a handful of
-//! lines. Built-in themes (the Gruvbox family) are such files under `assets/styles/ui/themes/`;
+//! lines. Built-in themes (Gruvbox and others) are such files under `assets/styles/ui/themes/`;
 //! imported ones are kept in the preferences (`Prefs::custom_themes`), so they also work in the
 //! browser. Colour vision modes still apply on top of a theme (`Tokens::with_vision`).
 //!
@@ -107,6 +107,9 @@ macro_rules! theme_keys {
             let Tokens {
                 $($one: _,)* $($many: _,)*
                 hover_face_lift: _, analysis: _, icons: _,
+                file_action_height: _, file_back_height: _, file_recovery_icon: _, file_grid_gap: _,
+                file_nav_width: _, file_nav_height: _, file_tile_height: _, file_tile_icon: _, file_recent_height: _,
+                file_sample_image_height: _, file_content_inset_x: _, file_content_inset_y: _, file_section_gap: _, font_start_title: _,
                 space_2: _, space_3: _, space_4: _, space_6: _, space_8: _, space_10: _,
                 space_12: _, space_14: _, space_16: _, space_24: _, radius_sm: _, radius_md: _,
                 radius_lg: _, radius_xl: _, font_badge: _, font_micro: _, font_panel: _, font_small: _,
@@ -124,6 +127,8 @@ macro_rules! theme_keys {
 
 theme_keys! {
     one: [
+        file_dim, file_recovery_well, file_background, file_surface, file_border, file_image_tint, file_rail, file_rail_ink, file_rail_hover,
+        file_primary, file_primary_ink, file_primary_border, file_recovery, file_recovery_ink, file_recovery_border,
         app_bar, toolbar, panel, panel_header, border, text, text_dim, accent, accent_soft, sketch_accent, error, warning,
         icon, timeline, hover, sel_face, sel_edge, sel_edge_rim, hover_edge, hover_edge_halo, sel_profile,
         sel_profile_edge, hover_profile, hover_profile_edge, sel_vertex, origin_plane, origin_plane_edge, origin_plane_hover,
@@ -263,14 +268,28 @@ pub fn export(name: &str, base: Base, t: &Tokens) -> Value {
     json!({"format": FORMAT, "name": name, "base": base, "colors": colors})
 }
 
-/// The theme files that come with SolidCraft (original files; Gruvbox's palette, MIT).
-const BUILTIN: [(&str, &str); 6] = [
+/// The theme files that come with SolidCraft (original files; Gruvbox, Tokyo Night, Solarized, Nord, Nosferatu and Catppuccin map open-source palettes, MIT).
+const BUILTIN: [(&str, &str); 20] = [
     ("gruvbox-dark", include_str!("../../../assets/styles/ui/themes/gruvbox-dark.json")),
     ("gruvbox-dark-hard", include_str!("../../../assets/styles/ui/themes/gruvbox-dark-hard.json")),
     ("gruvbox-dark-soft", include_str!("../../../assets/styles/ui/themes/gruvbox-dark-soft.json")),
     ("gruvbox-light", include_str!("../../../assets/styles/ui/themes/gruvbox-light.json")),
     ("gruvbox-light-hard", include_str!("../../../assets/styles/ui/themes/gruvbox-light-hard.json")),
     ("gruvbox-light-soft", include_str!("../../../assets/styles/ui/themes/gruvbox-light-soft.json")),
+    ("solidcraft-95", include_str!("../../../assets/styles/ui/themes/solidcraft-95.json")),
+    ("platinum-9", include_str!("../../../assets/styles/ui/themes/platinum-9.json")),
+    ("cupertino", include_str!("../../../assets/styles/ui/themes/cupertino.json")),
+    ("green-phosphor", include_str!("../../../assets/styles/ui/themes/green-phosphor.json")),
+    ("amber-phosphor", include_str!("../../../assets/styles/ui/themes/amber-phosphor.json")),
+    ("blueprint", include_str!("../../../assets/styles/ui/themes/blueprint.json")),
+    ("one-dark", include_str!("../../../assets/styles/ui/themes/one-dark.json")),
+    ("tokyo-night", include_str!("../../../assets/styles/ui/themes/tokyo-night.json")),
+    ("solarized-light", include_str!("../../../assets/styles/ui/themes/solarized-light.json")),
+    ("nord", include_str!("../../../assets/styles/ui/themes/nord.json")),
+    ("high-contrast", include_str!("../../../assets/styles/ui/themes/high-contrast.json")),
+    ("graphite", include_str!("../../../assets/styles/ui/themes/graphite.json")),
+    ("nosferatu", include_str!("../../../assets/styles/ui/themes/nosferatu.json")),
+    ("catppuccin-mocha", include_str!("../../../assets/styles/ui/themes/catppuccin-mocha.json")),
 ];
 
 /// The built-in themes, read once (one that fails to read is left out; a test reads them all).
@@ -326,7 +345,9 @@ mod tests {
         for t in builtin() {
             let base = if t.base.is_dark() { Tokens::dark() } else { Tokens::light() };
             assert_ne!(resolve(t), base, "{}", t.id);
-            assert_eq!(t.base.is_dark(), t.id.contains("dark"), "{}", t.id);
+            if t.id.starts_with("gruvbox-") {
+                assert_eq!(t.base.is_dark(), t.id.contains("dark"), "{}", t.id);
+            }
         }
     }
 
@@ -406,15 +427,15 @@ mod tests {
         let mk = |name: &str| ThemeFile { id: slug(name), name: name.into(), ..Default::default() };
         assert_eq!(add(&mut custom, mk("Gruvbox Dark")).unwrap(), "custom-gruvbox-dark");
         assert_eq!(add(&mut custom, mk("Dark")).unwrap(), "custom-dark");
-        assert_eq!(add(&mut custom, mk("Nord")).unwrap(), "nord");
-        let again = ThemeFile { base: Base::Light, ..mk("Nord") };
-        assert_eq!(add(&mut custom, again).unwrap(), "nord");
+        assert_eq!(add(&mut custom, mk("Mine")).unwrap(), "mine");
+        let again = ThemeFile { base: Base::Light, ..mk("Mine") };
+        assert_eq!(add(&mut custom, again).unwrap(), "mine");
         assert_eq!(custom.len(), 3);
-        assert_eq!(custom.iter().find(|t| t.id == "nord").map(|t| t.base), Some(Base::Light));
+        assert_eq!(custom.iter().find(|t| t.id == "mine").map(|t| t.base), Some(Base::Light));
         for i in custom.len()..MAX_CUSTOM {
             add(&mut custom, mk(&format!("t{i}"))).unwrap();
         }
         assert!(add(&mut custom, mk("one too many")).is_err());
-        assert!(find("gruvbox-dark", &custom).is_some() && find("nord", &custom).is_some() && find("dark", &custom).is_none());
+        assert!(find("gruvbox-dark", &custom).is_some() && find("mine", &custom).is_some() && find("dark", &custom).is_none());
     }
 }

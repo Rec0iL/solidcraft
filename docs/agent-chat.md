@@ -1,11 +1,12 @@
 # Agent chat
 
 Agent chat is a side panel where you talk to a coding agent you already use (Claude Code,
-Codex, Google Antigravity, OpenCode, Grok Build and others), or to a model behind an OpenAI-compatible endpoint you
-choose (Ollama or LM Studio on your computer, OpenAI, any other URL), and have it work on the
-design that's open. A coding agent runs on your computer under **your own account** with that
-agent: SolidCraft doesn't sell or proxy a model and needs no key for it. An endpoint's key, if
-it needs one, goes into your system keychain, never into SolidCraft's settings.
+Codex, Google Antigravity, OpenCode, Grok Build and others), or to a model behind an
+OpenAI-compatible or Anthropic-compatible endpoint you choose (Ollama or LM Studio on your
+computer, OpenAI, Anthropic, any other URL), and have it work on the design that's open. A
+coding agent runs on your computer under **your own account** with that agent: SolidCraft
+doesn't sell or proxy a model and needs no key for it. An endpoint's key, if it needs one, goes
+into your system keychain, never into SolidCraft's settings.
 
 Desktop app only.
 
@@ -155,6 +156,30 @@ The panel lists agents that aren't installed with their install command and a **
 **Refresh** looks again after you install one. **Test** starts an agent briefly, asks it for a
 session and ends it again.
 
+### Flatpak
+
+The Flatpak sandbox has no home-folder or network access by default. Agents installed
+through nvm or `~/.local/bin` can therefore work in a terminal while SolidCraft reports
+that no agent was found. For Claude Code and its ACP adapter, run:
+
+```sh
+flatpak override --user ai.storyteller.solidcraft --filesystem=~/.nvm:ro --filesystem=~/.local/bin:ro --filesystem=~/.local/share/claude:ro --filesystem=~/.claude --filesystem=~/.claude.json --share=network
+```
+
+These permissions apply to SolidCraft for your user account:
+
+- `~/.nvm:ro` exposes Node and globally installed npm adapters read-only.
+- `~/.local/bin:ro` exposes locally installed executables read-only.
+- `~/.local/share/claude:ro` exposes Claude Code's native installation read-only,
+  including the targets of links in `~/.local/bin`.
+- `~/.claude` and `~/.claude.json` allow Claude Code to read and update its sign-in
+  and configuration files.
+- `--share=network` lets the adapter reach its service. It also gives SolidCraft
+  network access, including making an enabled control server reachable from the host.
+
+Restart SolidCraft after applying the override. Other agents or installation folders
+may need different filesystem permissions.
+
 ### XAI Grok
 
 Install **Grok Build** and run `grok login` in a terminal to sign in with your Grok account.
@@ -175,11 +200,15 @@ Grok Build also supports `XAI_API_KEY` for users who choose API authentication.
   `my-agent --acp`. SolidCraft starts it directly, not through a shell.
 - **OpenAI-compatible API:** a preset (Ollama `http://localhost:11434/v1`, LM Studio
   `http://localhost:1234/v1`, OpenAI) or a custom URL, the model name, and an optional key.
-  The key goes into the system keychain (Keychain on macOS, Credential Manager on Windows, the
-  Secret Service on Linux) and is only ever sent over HTTPS or to this computer. **Test** asks the
-  endpoint for its models. For these agents SolidCraft runs the conversation itself, with the
-  same tools, limits and questions as for a coding agent, and at most 24 model requests per
-  message.
+- **Anthropic-compatible API:** a preset (Anthropic) or a custom URL, for an endpoint that
+  speaks the Anthropic Messages API (`{base}/v1/messages`). This covers Anthropic itself and
+  providers that offer an Anthropic-compatible endpoint, such as DeepSeek and Qwen.
+- The key goes into the system keychain (Keychain on macOS, Credential Manager on Windows, the
+  Secret Service on Linux) and is only ever sent over HTTPS or to this computer. **Test** asks an
+  OpenAI-compatible endpoint for its models; an Anthropic-compatible one gets a short message,
+  because not every such endpoint lists models (Qwen's has no model list). For these agents
+  SolidCraft runs the conversation itself, with the same tools, limits and questions as for a
+  coding agent, and at most 24 model requests per message.
 
 ## Signing in
 
