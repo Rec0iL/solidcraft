@@ -2351,7 +2351,8 @@ pub fn status(app: &SolveApp) -> Value {
     #[cfg(target_arch = "wasm32")]
     let detection: Option<Value> = None;
     let pid = c.backend.as_ref().and_then(|b| b.pid());
-    json!({
+    // Built in two steps: one `json!` with every field is past the macro recursion limit.
+    let mut out = json!({
         "features": app.preferences.ai_features,
         "configOptions": c.config_options,
         "configPending": c.config_pending,
@@ -2384,8 +2385,6 @@ pub fn status(app: &SolveApp) -> Value {
         "toolsPort": c.tools_port,
         "pid": pid,
         "waiting": c.waiting(),
-        "input": c.input,
-        "pills": c.pills.iter().map(|p| json!({"id": p.id, "label": p.label, "items": p.context.items.iter().map(|i| json!({"label": i.label, "detail": i.detail})).collect::<Vec<_>>()})).collect::<Vec<_>>(),
         "pending": c.pending.iter().map(|p| json!({"text": p.text, "image": p.image, "context": p.context.total(), "files": p.files.iter().map(|f| f.name.clone()).collect::<Vec<_>>()})).collect::<Vec<_>>(),
         "attachments": c.attachments.iter().map(|f| f.name.clone()).collect::<Vec<_>>(),
         "loading": c.loading.iter().map(|f| f.name.clone()).collect::<Vec<_>>(),
@@ -2394,7 +2393,13 @@ pub fn status(app: &SolveApp) -> Value {
         "turnWarning": c.turn_warning,
         "detection": detection,
         "items": items,
-    })
+    });
+    if let Some(map) = out.as_object_mut() {
+        // What the box holds, and what the pill marks in it stand for.
+        map.insert("input".into(), json!(c.input));
+        map.insert("pills".into(), Value::Array(c.pills.iter().map(|p| json!({"id": p.id, "label": p.label, "items": p.context.items.iter().map(|i| json!({"label": i.label, "detail": i.detail})).collect::<Vec<_>>()})).collect::<Vec<_>>()));
+    }
+    out
 }
 
 #[cfg(test)]
